@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Rumbo a las Indias</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+/* Concepto: carta náutica nocturna. Un mapa con la ruta Lisboa-Calicut arriba y el reto en curso al lado; cada respuesta mueve la carabela por la ruta y llena un cofre con una causa. */
+:root {
+  --bg: #0A1A2C;
+  --surface: #10273D;
+  --surface-2: #173550;
+  --fg: #F1E9D6;
+  --muted: #A3B6C8;
+  --gold: #E9B949;
+  --gold-ink: #E9B949;
+  --on-gold: #0F2238;
+  --sea-a: #0E3B4D;
+  --sea-b: #0A2A3E;
+  --land: #2C4757;
+  --coast: #4E7288;
+  --route: #6C94A8;
+  --wave: #4F8CA0;
+  --ok: #5CC38B;
+  --bad: #FF8F70;
+  --on-bad: #0F2238;
+  --line: rgba(241, 233, 214, 0.18);
+  --hull: #8A4B2A;
+  --sail: #F3E7CF;
+  --red: #C2402A;
+  --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-body: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #E7EFF2;
+    --surface: #F8FBFC;
+    --surface-2: #E3ECF0;
+    --fg: #0F2238;
+    --muted: #4A5F73;
+    --gold: #C98A12;
+    --gold-ink: #7C5107;
+    --on-gold: #0F2238;
+    --sea-a: #CBE2EA;
+    --sea-b: #B6D5E0;
+    --land: #E8DDC0;
+    --coast: #B5A074;
+    --route: #5A8198;
+    --wave: #7FAAB9;
+    --ok: #1E7A47;
+    --bad: #B23A22;
+    --on-bad: #FFFFFF;
+    --line: rgba(15, 34, 56, 0.2);
+    --hull: #7A3E22;
+    --sail: #FFFDF6;
+    --red: #B23A22;
+    --shadow: 0 14px 32px rgba(15, 34, 56, 0.14);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #E7EFF2;
+  --surface: #F8FBFC;
+  --surface-2: #E3ECF0;
+  --fg: #0F2238;
+  --muted: #4A5F73;
+  --gold: #C98A12;
+  --gold-ink: #7C5107;
+  --on-gold: #0F2238;
+  --sea-a: #CBE2EA;
+  --sea-b: #B6D5E0;
+  --land: #E8DDC0;
+  --coast: #B5A074;
+  --route: #5A8198;
+  --wave: #7FAAB9;
+  --ok: #1E7A47;
+  --bad: #B23A22;
+  --on-bad: #FFFFFF;
+  --line: rgba(15, 34, 56, 0.2);
+  --hull: #7A3E22;
+  --sail: #FFFDF6;
+  --red: #B23A22;
+  --shadow: 0 14px 32px rgba(15, 34, 56, 0.14);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.55; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+h2:focus-visible { outline: none; }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 56px; }
+.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 24px; }
+.kicker, .eyebrow { margin: 0 0 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold-ink); }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(42px, 7vw, 78px); line-height: 0.95; letter-spacing: -0.01em; text-wrap: balance; }
+.best { margin: 0; font-size: 14px; color: var(--muted); }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+@media (min-width: 980px) {
+  .grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+  .mapcol { position: sticky; top: 16px; }
+}
+
+/* Mapa */
+.mapcard { position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); }
+#map { display: block; width: 100%; height: auto; }
+.mapcard::after, .mapcard::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+.mapcard::before { background: #fff; z-index: 2; }
+.mapcard::after {
+  background: linear-gradient(rgba(6, 14, 26, 0.5), rgba(6, 14, 26, 0.5)),
+    repeating-linear-gradient(100deg, rgba(200, 220, 240, 0.55) 0 2px, transparent 2px 16px);
+  transition: opacity 0.3s;
+}
+.mapcard.storm::after { opacity: 1; animation: rain 0.35s linear infinite; }
+.mapcard.storm::before { animation: flash 1.6s; }
+@keyframes rain { to { background-position: 0 0, -32px 64px; } }
+@keyframes flash { 0%, 100% { opacity: 0; } 10% { opacity: 0.5; } 14% { opacity: 0; } 40% { opacity: 0.35; } 44% { opacity: 0; } }
+
+.mk circle { fill: var(--surface); stroke: var(--route); stroke-width: 3; transition: fill 0.4s, stroke 0.4s; }
+.mk.start circle { fill: var(--route); }
+.mk text.n { font: 700 24px var(--font-body); text-anchor: middle; dominant-baseline: central; fill: var(--fg); }
+.mk.ok circle { fill: var(--gold); stroke: var(--gold); }
+.mk.ok text.n { fill: var(--on-gold); }
+.mk.bad circle { fill: var(--bad); stroke: var(--bad); }
+.mk.bad text.n { fill: var(--on-bad); }
+.lbl { font: 600 24px var(--font-body); fill: var(--fg); paint-order: stroke; stroke: var(--sea-b); stroke-width: 6px; stroke-linejoin: round; }
+.shipbob { animation: bob 3.2s ease-in-out infinite; }
+#ship.shake .shipbob { animation: shake 0.45s ease-in-out 4; }
+@keyframes bob { 50% { transform: translateY(-4px) rotate(1.2deg); } }
+@keyframes shake { 25% { transform: translateX(-6px) rotate(-4deg); } 75% { transform: translateX(6px) rotate(4deg); } }
+.wv { fill: none; stroke: var(--wave); stroke-width: 2.5; stroke-linecap: round; opacity: 0.55; animation: wv 4s ease-in-out infinite; }
+@keyframes wv { 50% { opacity: 0.15; transform: translateX(6px); } }
+.sp { fill: var(--gold); animation: spark 0.9s ease-out forwards; }
+@keyframes spark { from { transform: translate(0, 0) scale(1); opacity: 1; } to { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; } }
+
+.chips { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.chip { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; padding: 10px 4px; border: 1.5px dashed var(--line); border-radius: 12px; color: var(--muted); text-align: center; font-size: 12px; line-height: 1.2; transition: background 0.3s, color 0.3s; }
+.chip .ico { width: 26px; height: 26px; flex: none; }
+.chip[data-state="ok"] { border-style: solid; border-color: var(--gold); background: var(--gold); color: var(--on-gold); animation: pop 0.6s; }
+.chip[data-state="bad"] { border-color: var(--bad); color: var(--bad); }
+.chip[data-state="bad"] span { text-decoration: line-through; }
+@keyframes pop { 0% { transform: scale(0.8); } 55% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@media (max-width: 560px) { .lbl, .chip span { display: none; } }
+
+/* Retos */
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: clamp(18px, 3vw, 32px); box-shadow: var(--shadow); min-width: 0; }
+h2.q { margin: 0 0 20px; font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4vw, 40px); line-height: 1.05; text-wrap: balance; }
+.lead { margin: 0 0 14px; color: var(--muted); max-width: 60ch; }
+.rules { margin: 0 0 4px; padding-left: 20px; display: grid; gap: 6px; max-width: 60ch; }
+.opts { display: grid; gap: 10px; }
+button:disabled { cursor: default; }
+
+.crate, .strip, .chest, .step { display: flex; align-items: flex-start; gap: 14px; width: 100%; padding: 14px 16px; text-align: left; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface-2); cursor: pointer; transition: transform 0.15s, border-color 0.15s, background 0.2s; }
+.crate:hover:not(:disabled), .strip:hover:not(:disabled), .chest:hover:not(:disabled), .step:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--gold); }
+.tag { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; background: var(--bg); color: var(--gold-ink); font-weight: 700; font-size: 14px; }
+.crate.ok, .chest.ok, .step.ok { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 16%, transparent); }
+.crate.bad, .chest.bad, .step.bad, .coin.bad { border-color: var(--bad); }
+.crate.bad, .chest.bad, .step.bad { background: color-mix(in srgb, var(--bad) 16%, transparent); }
+
+.coins { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 16px; justify-items: center; }
+.coin { width: 104px; height: 104px; border-radius: 50%; border: 4px solid #B07A12; background: radial-gradient(circle at 35% 30%, #FFE9A8, #E9B949 55%, #B9801F); color: #3B2606; font-family: var(--font-display); font-weight: 700; font-size: 30px; cursor: pointer; box-shadow: inset 0 0 0 5px rgba(120, 80, 10, 0.35), 0 8px 16px rgba(0, 0, 0, 0.25); transition: transform 0.2s; }
+.coin:hover:not(:disabled) { transform: rotate(-6deg) scale(1.06); }
+.coin.ok { outline: 5px solid var(--ok); outline-offset: 2px; }
+.coin.bad { outline: 5px solid var(--bad); outline-offset: 2px; filter: grayscale(0.55); }
+
+.strip { position: relative; padding-right: 116px; }
+.stamp { position: absolute; right: 12px; top: 50%; transform: translateY(-50%) rotate(-6deg); padding: 3px 8px; border: 2px solid; border-radius: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; opacity: 0; }
+.strip.is-false { border-color: var(--bad); }
+.strip.is-false .stamp { opacity: 1; color: var(--bad); }
+.strip.is-true .stamp { opacity: 1; color: var(--ok); }
+.strip.picked { box-shadow: 0 0 0 3px var(--gold); }
+
+.box { flex: none; width: 24px; height: 24px; margin-top: 1px; display: grid; place-items: center; border: 2px solid var(--muted); border-radius: 6px; font-size: 15px; font-weight: 700; color: var(--on-gold); }
+.chest[aria-pressed="true"] { border-color: var(--gold); }
+.chest[aria-pressed="true"] .box { background: var(--gold); border-color: var(--gold); }
+.chest[aria-pressed="true"] .box::after { content: '✓'; }
+
+.num { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border: 2px dashed var(--muted); border-radius: 50%; font-weight: 700; font-size: 15px; }
+.step.sel { border-color: var(--gold); }
+.step.sel .num { border-style: solid; border-color: var(--gold); background: var(--gold); color: var(--on-gold); }
+.step.ok .num, .step.bad .num { border-style: solid; background: var(--bg); color: var(--fg); }
+
+.row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.go, .ghost { padding: 12px 22px; border-radius: 10px; font-weight: 700; font-size: 16px; cursor: pointer; }
+.go { background: var(--gold); border: 0; color: var(--on-gold); }
+.go:disabled { opacity: 0.45; cursor: not-allowed; }
+.ghost { background: transparent; border: 1.5px solid var(--line); }
+.go:hover:not(:disabled) { filter: brightness(1.08); }
+
+.fb { margin-top: 20px; padding: 16px 18px; border: 1.5px solid; border-radius: 12px; animation: rise 0.35s; }
+.fb.good { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+.fb.miss { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, transparent); }
+.fb p { margin: 0 0 8px; }
+.verdict { font-family: var(--font-display); font-size: 28px; font-weight: 700; line-height: 1.1; }
+.fb.good .verdict { color: var(--ok); }
+.fb.miss .verdict { color: var(--bad); }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.score { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(64px, 12vw, 108px); line-height: 0.9; color: var(--gold-ink); }
+.score small { font-size: 0.4em; color: var(--muted); }
+.rank { margin: 6px 0 10px; font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4vw, 38px); line-height: 1.05; }
+.log { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 8px; }
+.log li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; border: 1.5px solid var(--line); border-radius: 10px; }
+.log b.ok { color: var(--ok); }
+.log b.bad { color: var(--bad); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001s !important; animation-iteration-count: 1 !important; transition-duration: 0.001s !important; }
+}
+</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-silk" viewBox="0 0 24 24"><path d="M3 7c3-4 6 4 9 0s6 4 9 0M3 12c3-4 6 4 9 0s6 4 9 0M3 17c3-4 6 4 9 0s6 4 9 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><polygon points="16,8 13.5,13.5 8,16 10.5,10.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-gem" viewBox="0 0 24 24"><path d="M4 9h16M9 9l3 12 3-12M9 9l3-6 3 6M4 9l8 12 8-12-4-6H8Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="kicker">Siglos XV–XVI · Cinco retos</p>
+      <h1>Rumbo a las Indias</h1>
+    </div>
+    <p class="best" id="best" hidden></p>
+  </header>
+
+  <main class="grid">
+    <section class="mapcol" aria-label="Mapa de la travesía">
+      <div class="mapcard" id="mapcard">
+        <svg id="map" viewBox="0 0 1000 640" role="img" aria-label="Mapa de la travesía desde Lisboa hasta Calicut con cinco puertos intermedios">
+          <defs>
+            <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" style="stop-color: var(--sea-a)"/>
+              <stop offset="1" style="stop-color: var(--sea-b)"/>
+            </linearGradient>
+          </defs>
+          <rect width="1000" height="640" fill="url(#sea)"/>
+          <g stroke="var(--line)" stroke-width="1" fill="none" opacity="0.6">
+            <path d="M0 160H1000M0 320H1000M0 480H1000M250 0V640M500 0V640M750 0V640"/>
+          </g>
+          <g id="waves"></g>
+          <path d="M0 300 Q70 290 100 340 Q130 400 105 460 Q85 520 110 570 Q125 610 100 640 L0 640 Z" fill="var(--land)" stroke="var(--coast)" stroke-width="3"/>
+          <path d="M770 0 L1000 0 L1000 480 Q950 440 940 370 Q925 300 905 230 Q880 150 835 110 Q800 70 770 0 Z" fill="var(--land)" stroke="var(--coast)" stroke-width="3"/>
+          <circle cx="560" cy="120" r="14" fill="var(--land)" stroke="var(--coast)" stroke-width="2"/>
+          <circle cx="600" cy="150" r="8" fill="var(--land)" stroke="var(--coast)" stroke-width="2"/>
+          <circle cx="330" cy="590" r="12" fill="var(--land)" stroke="var(--coast)" stroke-width="2"/>
+          <g transform="translate(190,110)" opacity="0.85">
+            <circle r="58" fill="none" stroke="var(--coast)" stroke-width="2"/>
+            <polygon points="0,-54 9,-9 54,0 9,9 0,54 -9,9 -54,0 -9,-9" fill="var(--coast)"/>
+            <polygon points="0,-54 9,-9 0,0 -9,-9" fill="var(--red)"/>
+          </g>
+          <path id="route" d="M150 480 C 250 300, 340 570, 460 450 S 650 240, 760 370 S 850 330, 885 205" fill="none" stroke="var(--route)" stroke-width="4" stroke-dasharray="3 12" stroke-linecap="round"/>
+          <path id="done" d="M150 480 C 250 300, 340 570, 460 450 S 650 240, 760 370 S 850 330, 885 205" fill="none" stroke="var(--gold)" stroke-width="6" stroke-linecap="round"/>
+          <g id="markers"></g>
+          <g id="fx"></g>
+          <g id="ship" transform="translate(150,480) scale(1.5)">
+            <g class="shipbob">
+              <path d="M-30 -12 L30 -12 Q24 4 10 6 L-14 6 Q-26 4 -30 -12 Z" fill="var(--hull)"/>
+              <path d="M-28 -6 L27 -6" stroke="var(--gold)" stroke-width="2"/>
+              <rect x="-14" y="-62" width="3" height="50" fill="var(--hull)"/>
+              <rect x="8" y="-70" width="3" height="58" fill="var(--hull)"/>
+              <path d="M-11 -58 Q18 -46 14 -30 Q10 -20 -11 -18 Z" fill="var(--sail)"/>
+              <path d="M11 -66 Q36 -54 32 -38 Q28 -28 11 -26 Z" fill="var(--sail)"/>
+              <rect x="-1" y="-48" width="3" height="14" fill="var(--red)"/>
+              <rect x="-6" y="-43" width="13" height="3" fill="var(--red)"/>
+              <polygon points="8,-70 22,-66 8,-62" fill="var(--red)"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <ul class="chips" id="chips" aria-label="Cofre de tesoros"></ul>
+    </section>
+
+    <section class="stage" id="stage"></section>
+  </main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var NS = 'http://www.w3.org/2000/svg';
+  function $(s) { return document.querySelector(s); }
+  var stage = $('#stage'), routeEl = $('#route'), doneEl = $('#done'), shipEl = $('#ship');
+  var markersG = $('#markers'), fxG = $('#fx'), wavesG = $('#waves'), mapCard = $('#mapcard');
+  var chipsEl = $('#chips'), bestEl = $('#best');
+  var L = routeEl.getTotalLength();
+  var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var BEST_KEY = 'rumbo-indias-mejor';
+
+  var STOPS = ['Lisboa', 'Seda y especias', 'Constantinopla', 'Nuevas rutas', 'Oro y fe', 'Calicut'];
+  var LABELS = [
+    { dx: 0, dy: 50, a: 'middle' }, { dx: 0, dy: -34, a: 'middle' }, { dx: 0, dy: 50, a: 'middle' },
+    { dx: 0, dy: -34, a: 'middle' }, { dx: 0, dy: 50, a: 'middle' }, { dx: -32, dy: 8, a: 'end' }
+  ];
+  var CHIPS = [
+    { n: 'Seda y especias', i: 'silk' }, { n: 'Constantinopla', i: 'moon' }, { n: 'Nuevas rutas', i: 'compass' },
+    { n: 'Oro y fe', i: 'gem' }, { n: 'Carta náutica', i: 'map' }
+  ];
+
+  var QS = [
+    { type: 'choice', theme: 'Seda y especias',
+      q: '¿Por qué se valoraban tanto la seda y las especias en Europa?',
+      items: [
+        { t: 'Eran productos escasos y de lujo que llegaban desde Oriente tras largos y costosos viajes', ok: true },
+        { t: 'Se producían en abundancia en todos los reinos europeos' },
+        { t: 'Solo se usaban para construir barcos' },
+        { t: 'Los comerciantes las recibían gratis en los puertos' }
+      ],
+      explain: 'La seda y las especias venían de Asia por rutas largas y con muchos intermediarios, así que llegaban a Europa muy caras. Las especias daban sabor a las comidas y también se usaban en medicinas y perfumes.' },
+    { type: 'coins', theme: 'Constantinopla',
+      q: '¿En qué año conquistaron los otomanos la ciudad de Constantinopla?',
+      items: [{ t: '1066' }, { t: '1453', ok: true }, { t: '1492' }, { t: '1517' }],
+      explain: 'En 1453 el sultán Mehmed II tomó Constantinopla. Los otomanos pasaron a controlar un paso clave entre Europa y Asia, y eso empujó a los europeos a buscar otros caminos hacia Oriente.' },
+    { type: 'find', theme: 'Nuevas rutas',
+      q: 'Una de estas afirmaciones es falsa. Toca la que no es verdad.',
+      items: [
+        { t: 'Las rutas terrestres hacia Asia eran largas, caras y pasaban por muchas manos.' },
+        { t: 'Los europeos querían llegar a Asia sin depender de tantos intermediarios.' },
+        { t: 'Se buscaron rutas por mar porque Europa ya no quería productos de Oriente.', ok: true }
+      ],
+      explain: 'La falsa es la tercera: Europa seguía deseando seda y especias. Justamente por eso buscó rutas alternativas por mar para llegar a Asia de forma directa.' },
+    { type: 'multi', theme: 'Oro y fe',
+      q: '¿Qué impulsó a los europeos a lanzarse al mar? Marca todas las razones correctas.',
+      items: [
+        { t: 'Conseguir oro, plata y gemas preciosas', ok: true },
+        { t: 'Construir un canal entre dos mares' },
+        { t: 'Expandir la fe cristiana a nuevas tierras', ok: true },
+        { t: 'Evitar todo contacto con otros pueblos' },
+        { t: 'Obtener especias y otros productos de lujo sin tantos intermediarios', ok: true }
+      ],
+      explain: 'Los viajes buscaban riquezas como oro, plata y gemas, productos de lujo como las especias y también difundir el cristianismo. Ninguna expedición tenía como meta un canal ni aislarse de otros pueblos.' },
+    { type: 'order', theme: 'Carta náutica',
+      q: 'Último reto: ordena la cadena de causas, de la primera a la última.',
+      items: [
+        { t: 'La seda y las especias de Oriente se vuelven muy valiosas en Europa', ord: 0 },
+        { t: 'Los otomanos conquistan Constantinopla en 1453', ord: 1 },
+        { t: 'Europa busca rutas alternativas por mar para llegar a Asia', ord: 2 },
+        { t: 'Los navegantes parten tras riquezas, gemas y la expansión de la fe', ord: 3 }
+      ],
+      explain: 'Así encajan las piezas: el deseo de productos de Oriente, el control otomano del paso, la búsqueda de rutas por mar y el impulso de riquezas y fe que hizo zarpar a los barcos.' }
+  ];
+
+  var RANKS = [
+    ['Grumete', 'La tormenta fue fuerte. Vuelve a zarpar: en cada travesía se aprende algo más.'],
+    ['Grumete', 'La tormenta fue fuerte. Vuelve a zarpar: en cada travesía se aprende algo más.'],
+    ['Navegante', 'Llegaste a puerto con la nave dañada. Otra travesía te dejará mejor preparado.'],
+    ['Piloto', 'Buena travesía. Repasa las causas que se te escaparon y vuelve a zarpar.'],
+    ['Capitán', 'Casi perfecto. Una sola tormenta no detuvo a tu tripulación.'],
+    ['Almirante', 'Sin una sola tormenta. Entiendes todas las causas de la búsqueda de nuevas rutas.']
+  ];
+
+  var deck = [], idx = -1, results = [], locked = false, sel = [], picks = [], cur = 0, mk = [], chipEls = [];
+
+  function svgEl(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) { e.setAttribute(k, attrs[k]); }
+    if (parent) { parent.appendChild(e); }
+    return e;
+  }
+  function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function isSorted(a) { return a.every(function (x, i) { return x.ord === i; }); }
+
+  /* Mapa */
+  (function buildWaves() {
+    var s = 7;
+    function rnd() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
+    for (var i = 0; i < 44; i++) {
+      var x = 170 + rnd() * 560, y = 60 + rnd() * 560;
+      var g = svgEl('g', { transform: 'translate(' + x.toFixed(0) + ',' + y.toFixed(0) + ')' }, wavesG);
+      var p = svgEl('path', { d: 'M0 0q9 -9 18 0t18 0', 'class': 'wv' }, g);
+      p.style.animationDelay = (rnd() * 4).toFixed(2) + 's';
+    }
+  })();
+
+  function buildMarkers() {
+    markersG.innerHTML = '';
+    mk = [];
+    for (var i = 0; i <= 5; i++) {
+      var pt = routeEl.getPointAtLength(L * i / 5);
+      var g = svgEl('g', { 'class': 'mk' + (i === 0 ? ' start' : ''), transform: 'translate(' + pt.x.toFixed(1) + ',' + pt.y.toFixed(1) + ')' }, markersG);
+      svgEl('circle', { r: i === 0 ? 11 : 21 }, g);
+      if (i > 0) {
+        var n = svgEl('text', { 'class': 'n' }, g);
+        n.textContent = String(i);
+      }
+      var c = LABELS[i];
+      var t = svgEl('text', { 'class': 'lbl', x: c.dx, y: c.dy, 'text-anchor': c.a }, g);
+      t.textContent = STOPS[i];
+      mk.push(g);
+    }
+  }
+
+  function buildChips() {
+    chipsEl.innerHTML = '';
+    chipEls = CHIPS.map(function (c) {
+      var li = document.createElement('li');
+      li.className = 'chip';
+      li.setAttribute('data-state', 'todo');
+      li.setAttribute('title', c.n + ': pendiente');
+      li.innerHTML = '<svg class="ico" aria-hidden="true"><use href="#i-' + c.i + '"/></svg><span>' + c.n + '</span>';
+      chipsEl.appendChild(li);
+      return li;
+    });
+  }
+  function setChip(k, ok) {
+    var li = chipEls[k];
+    li.setAttribute('data-state', ok ? 'ok' : 'bad');
+    li.setAttribute('title', CHIPS[k].n + (ok ? ': conseguido' : ': perdido'));
+  }
+
+  function place(d) {
+    var p = routeEl.getPointAtLength(d);
+    var p2 = routeEl.getPointAtLength(Math.min(L, d + 3));
+    var a = Math.atan2(p2.y - p.y, p2.x - p.x) * 180 / Math.PI * 0.25;
+    shipEl.setAttribute('transform', 'translate(' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ') rotate(' + a.toFixed(1) + ') scale(1.5)');
+    doneEl.style.strokeDasharray = String(L);
+    doneEl.style.strokeDashoffset = String(Math.max(0, L - d));
+  }
+
+  function sail(f, ok, cb) {
+    var from = cur, to = L * f, t0 = null, dur = reduce ? 1 : 1700;
+    if (!ok) {
+      mapCard.classList.add('storm');
+      shipEl.classList.add('shake');
+      setTimeout(function () { mapCard.classList.remove('storm'); shipEl.classList.remove('shake'); }, 1900);
+    }
+    function step(ts) {
+      if (t0 === null) { t0 = ts; }
+      var p = Math.min(1, (ts - t0) / dur);
+      var e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      cur = from + (to - from) * e;
+      place(cur);
+      if (p < 1) { requestAnimationFrame(step); } else if (cb) { cb(); }
+    }
+    requestAnimationFrame(step);
+  }
+
+  function burst(i) {
+    var pt = routeEl.getPointAtLength(L * i / 5);
+    var g = svgEl('g', { transform: 'translate(' + pt.x.toFixed(1) + ',' + pt.y.toFixed(1) + ')' }, fxG);
+    for (var k = 0; k < 8; k++) {
+      var ang = k * Math.PI / 4, r = 54;
+      var s = svgEl('path', { d: 'M0 -9L2.5 -2.5L9 0L2.5 2.5L0 9L-2.5 2.5L-9 0L-2.5 -2.5Z', 'class': 'sp' }, g);
+      s.style.setProperty('--dx', (Math.cos(ang) * r).toFixed(0) + 'px');
+      s.style.setProperty('--dy', (Math.sin(ang) * r).toFixed(0) + 'px');
+    }
+    setTimeout(function () { if (g.parentNode) { g.parentNode.removeChild(g); } }, 1000);
+  }
+
+  /* Juego */
+  function reset() {
+    cur = 0; results = []; sel = []; picks = []; locked = false;
+    doneEl.style.strokeDasharray = String(L);
+    place(0);
+    buildMarkers();
+    buildChips();
+  }
+
+  function startGame() {
+    reset();
+    deck = QS.map(function (q) {
+      var items = q.items.slice();
+      if (q.type === 'order') {
+        do { shuffle(items); } while (isSorted(items));
+      } else if (q.type !== 'coins') {
+        shuffle(items);
+      }
+      return { type: q.type, theme: q.theme, q: q.q, items: items, explain: q.explain };
+    });
+    idx = 0;
+    renderQuestion();
+  }
+
+  function head(q, i) {
+    return '<p class="eyebrow">Reto ' + (i + 1) + ' de 5 · ' + q.theme + '</p><h2 class="q" id="qh" tabindex="-1">' + q.q + '</h2>';
+  }
+
+  function renderIntro() {
+    stage.innerHTML =
+      '<p class="eyebrow">Tu travesía</p>' +
+      '<h2 class="q" id="qh" tabindex="-1">Cinco retos para llegar a Asia</h2>' +
+      '<p class="lead">Tu carabela sale de Lisboa rumbo a Calicut. Cada reto trae una causa de la búsqueda de nuevas rutas marítimas.</p>' +
+      '<ul class="rules">' +
+      '<li>Si aciertas, la nave llega al siguiente puerto y el cofre guarda un tesoro.</li>' +
+      '<li>Si fallas, una tormenta golpea la nave y ese tesoro se pierde, pero la travesía sigue.</li>' +
+      '<li>Hay cinco tipos de reto: elegir, fechar, descubrir la mentira, cargar el baúl y ordenar causas.</li>' +
+      '</ul>' +
+      '<div class="row"><button type="button" class="go" data-a="start">Zarpar</button></div>';
+  }
+
+  function renderQuestion() {
+    var q = deck[idx], body = '';
+    locked = false; sel = []; picks = [];
+    if (q.type === 'choice') {
+      body = '<div class="opts">' + q.items.map(function (o, k) {
+        return '<button type="button" class="crate" data-a="pick" data-k="' + k + '"><span class="tag">' + 'ABCD'.charAt(k) + '</span><span>' + o.t + '</span></button>';
+      }).join('') + '</div>';
+    } else if (q.type === 'coins') {
+      body = '<div class="coins">' + q.items.map(function (o, k) {
+        return '<button type="button" class="coin" data-a="pick" data-k="' + k + '" aria-label="Año ' + o.t + '">' + o.t + '</button>';
+      }).join('') + '</div>';
+    } else if (q.type === 'find') {
+      body = '<div class="opts">' + q.items.map(function (o, k) {
+        return '<button type="button" class="strip" data-a="pick" data-k="' + k + '"><span>' + o.t + '</span><span class="stamp"></span></button>';
+      }).join('') + '</div>';
+    } else if (q.type === 'multi') {
+      body = '<div class="opts">' + q.items.map(function (o, k) {
+        return '<button type="button" class="chest" data-a="tog" data-k="' + k + '" aria-pressed="false"><span class="box"></span><span>' + o.t + '</span></button>';
+      }).join('') + '</div><div class="row"><button type="button" class="go" id="mgo" data-a="mgo" disabled>Confirmar carga</button></div>';
+    } else {
+      body = '<div class="opts" id="ordlist">' + q.items.map(function (o, k) {
+        return '<button type="button" class="step" data-a="ord" data-k="' + k + '"><span class="num"></span><span>' + o.t + '</span></button>';
+      }).join('') + '</div><div class="row"><button type="button" class="go" id="ogo" data-a="ogo" disabled>Zarpar con este orden</button><button type="button" class="ghost" id="oclr" data-a="oclr">Borrar orden</button></div>' +
+        '<p class="lead" style="margin-top:12px">Toca las tarjetas en el orden que creas correcto.</p>';
+    }
+    stage.innerHTML = head(q, idx) + body;
+    var h = $('#qh');
+    if (h) { h.focus({ preventScroll: true }); }
+  }
+
+  function showFeedback(ok) {
+    var q = deck[idx];
+    var last = idx === 4;
+    stage.insertAdjacentHTML('beforeend',
+      '<div class="fb ' + (ok ? 'good' : 'miss') + '" role="status">' +
+      '<p class="verdict">' + (ok ? '¡Rumbo correcto!' : 'Tormenta a la vista') + '</p>' +
+      '<p>' + (ok ? 'Ganas el tesoro de este tramo.' : 'La nave resiste, pero el tesoro de este tramo se pierde.') + '</p>' +
+      '<p>' + q.explain + '</p>' +
+      '<div class="row"><button type="button" class="go" id="next" data-a="next" disabled>' + (last ? 'Llegar a Calicut' : 'Seguir rumbo') + '</button></div>' +
+      '</div>');
+    var fb = stage.querySelector('.fb');
+    if (fb && fb.scrollIntoView) { fb.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); }
+  }
+
+  function resolve(ok) {
+    locked = true;
+    results[idx] = ok;
+    var k = idx;
+    sail((k + 1) / 5, ok, function () {
+      mk[k + 1].classList.add(ok ? 'ok' : 'bad');
+      if (ok) { burst(k + 1); }
+      setChip(k, ok);
+      var nb = $('#next');
+      if (nb) { nb.disabled = false; }
+    });
+    showFeedback(ok);
+  }
+
+  function getBest() {
+    try { var v = window.localStorage.getItem(BEST_KEY); return v === null ? null : parseInt(v, 10); } catch (e) { return null; }
+  }
+  function setBest(n) {
+    try { window.localStorage.setItem(BEST_KEY, String(n)); } catch (e) { /* sin almacenamiento */ }
+  }
+  function showBest() {
+    var b = getBest();
+    if (b === null || isNaN(b)) { bestEl.hidden = true; return; }
+    bestEl.hidden = false;
+    bestEl.textContent = 'Mejor travesía en este navegador: ' + b + ' de 5';
+  }
+
+  function renderFinal() {
+    idx = 5;
+    var n = results.filter(Boolean).length;
+    var b = getBest();
+    if (b === null || isNaN(b) || n > b) { setBest(n); }
+    showBest();
+    var r = RANKS[n];
+    stage.innerHTML =
+      '<p class="eyebrow">Llegada a Calicut</p>' +
+      '<p class="score" aria-label="' + n + ' aciertos de 5">' + n + '<small>/5</small></p>' +
+      '<h2 class="rank" id="qh" tabindex="-1">' + r[0] + '</h2>' +
+      '<p class="lead">' + r[1] + '</p>' +
+      '<ol class="log">' + QS.map(function (q, i) {
+        return '<li><span>' + q.theme + '</span><b class="' + (results[i] ? 'ok' : 'bad') + '">' + (results[i] ? 'Conseguido' : 'Perdido') + '</b></li>';
+      }).join('') + '</ol>' +
+      '<p class="lead" style="margin-top:16px">En 1498 Vasco da Gama llegó a Calicut, en la India, tras rodear África: la ruta marítima a Asia por fin existía.</p>' +
+      '<div class="row"><button type="button" class="go" data-a="again">Navegar de nuevo</button></div>';
+    var h = $('#qh');
+    if (h) { h.focus({ preventScroll: true }); }
+    if (n === 5) { burst(5); }
+  }
+
+  /* Eventos */
+  stage.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-a]');
+    if (!b || b.disabled) { return; }
+    var a = b.getAttribute('data-a'), q = deck[idx], k = parseInt(b.getAttribute('data-k'), 10);
+    if (a === 'start' || a === 'again') { startGame(); return; }
+    if (a === 'next') { if (idx < 4) { idx += 1; renderQuestion(); } else { renderFinal(); } return; }
+    if (locked || !q) { return; }
+
+    if (a === 'pick') {
+      var btns = stage.querySelectorAll('[data-a="pick"]');
+      var ok = !!q.items[k].ok;
+      Array.prototype.forEach.call(btns, function (x, j) {
+        var it = q.items[j];
+        x.disabled = true;
+        if (q.type === 'find') {
+          var st = x.querySelector('.stamp');
+          x.classList.add(it.ok ? 'is-false' : 'is-true');
+          st.textContent = it.ok ? 'FALSA' : 'VERDADERA';
+          if (j === k) { x.classList.add('picked'); }
+        } else if (it.ok) {
+          x.classList.add('ok');
+        } else if (j === k) {
+          x.classList.add('bad');
+        }
+      });
+      resolve(ok);
+    } else if (a === 'tog') {
+      var pos = sel.indexOf(k);
+      if (pos >= 0) { sel.splice(pos, 1); } else { sel.push(k); }
+      b.setAttribute('aria-pressed', pos >= 0 ? 'false' : 'true');
+      $('#mgo').disabled = sel.length === 0;
+    } else if (a === 'mgo') {
+      var total = q.items.filter(function (o) { return o.ok; }).length;
+      var good = sel.length === total && sel.every(function (s) { return q.items[s].ok; });
+      Array.prototype.forEach.call(stage.querySelectorAll('[data-a="tog"]'), function (x, j) {
+        x.disabled = true;
+        if (q.items[j].ok) { x.classList.add('ok'); } else if (sel.indexOf(j) >= 0) { x.classList.add('bad'); }
+      });
+      $('#mgo').disabled = true;
+      resolve(good);
+    } else if (a === 'ord') {
+      var p = picks.indexOf(k);
+      if (p >= 0) { picks.splice(p, 1); } else { picks.push(k); }
+      syncOrder();
+    } else if (a === 'oclr') {
+      picks = [];
+      syncOrder();
+    } else if (a === 'ogo') {
+      var good2 = picks.every(function (pk, i) { return q.items[pk].ord === i; });
+      var list = $('#ordlist');
+      var btnsO = Array.prototype.slice.call(list.querySelectorAll('[data-a="ord"]'));
+      btnsO.forEach(function (x, j) {
+        x.disabled = true;
+        x.classList.remove('sel');
+        x.querySelector('.num').textContent = String(q.items[j].ord + 1);
+        x.classList.add(picks.indexOf(j) === q.items[j].ord ? 'ok' : 'bad');
+      });
+      btnsO.slice().sort(function (x, y) {
+        return q.items[btnsO.indexOf(x)].ord - q.items[btnsO.indexOf(y)].ord;
+      }).forEach(function (x) { list.appendChild(x); });
+      $('#ogo').disabled = true;
+      $('#oclr').disabled = true;
+      resolve(good2);
+    }
+  });
+
+  function syncOrder() {
+    var btns = stage.querySelectorAll('[data-a="ord"]');
+    Array.prototype.forEach.call(btns, function (x, j) {
+      var p = picks.indexOf(j);
+      x.classList.toggle('sel', p >= 0);
+      x.querySelector('.num').textContent = p >= 0 ? String(p + 1) : '';
+    });
+    $('#ogo').disabled = picks.length !== 4;
+  }
+
+  /* Arranque */
+  reset();
+  showBest();
+  renderIntro();
+})();
+</script>
+
+</body>
+</html>
